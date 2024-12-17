@@ -1,0 +1,13 @@
+pandas
+matplotlib
+scikit-learn
+tensorflow
+opencv-python
+pymongo
+dataset
+fastapi
+pydantic[dotenv]
+uvicorn[standard]
+python-dotenv
+Pillow
+python-multipart

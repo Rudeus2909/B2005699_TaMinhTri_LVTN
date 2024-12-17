@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11" rel="stylesheet">
+        <link href="{% static 'app/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet"/>
+        <link href="{% static 'app/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet"/>
+        <link href="{% static 'app/vendor/aos/aos.css' %}" rel="stylesheet"/>
+        <link href="{% static 'app/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet"/>
+        <link href="{% static 'app/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet"/>
+        <link href="{% static 'app/css/main.css' %}" rel="stylesheet"/>
+    </head>
+    <body>
+        <header id="header" class="header d-flex align-items-center position-relative">
+            <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
+        
+              <a href="index.html" class="logo d-flex align-items-center" style="margin-left: 610px">
+                <!-- Uncomment the line below if you also wish to use an image logo -->
+                <img src="{% static 'app/img/logo.png' %}" alt="AgriCulture">
+                <!-- <h1 class="sitename">AgriCulture</h1>  -->
+              </a>
+        
+            </div>
+          </header>
+          <main class="main">
+            <!-- Hero Section -->
+            <section id="hero" class="hero section dark-background">
+                <div id="hero-carousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+                    <div class="carousel-item active">
+                        <img src="{% static 'app/img/hero_1.jpg' %}" alt="">
+                        <div class="carousel-container">
+                            <h2>Hệ thống nhận dạng nông sản</h2>
+                            <h2>thông qua hình ảnh</h2>
+                            <form id="predictForm" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <label class="form-label" for="image">Tải ảnh lên:</label>
+                                <input class="form-control" type="file" id="image" name="image" accept="image/*" required>
+                                <button class="btn btn-outline-light" style="margin-top: 10px; margin-left: 120px" type="submit">Dự đoán</button>
+                            </form>
+                        </div>
+                    </div><!-- End Carousel Item -->
+                </div>
+            </section><!-- /Hero Section -->
+          </main>
+        
+          <script>
+            document.getElementById('predictForm').addEventListener('submit', function (e) {
+                e.preventDefault(); // Ngăn form gửi yêu cầu theo cách mặc định
+        
+                const formData = new FormData(this); // Lấy dữ liệu từ form
+        
+                // Hiển thị SweetAlert với spinner
+                Swal.fire({
+                    title: 'Đang dự đoán...',
+                    html: 'Vui lòng chờ trong giây lát.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading(); // Hiển thị spinner
+                    }
+                });
+        
+                fetch("{% url 'home' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}', // Token bảo mật CSRF
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close(); // Đóng SweetAlert khi server phản hồi
+        
+                    if (data.status === 'success') {
+                        const topLabels = data.top_labels;
+                        const labelImages = data.label_images;
+        
+                        let htmlContent = `
+                            <p><strong>Kết quả dự đoán:</strong></p>
+                            <ul style="text-align: left;">`;
+        
+                        // Hiển thị danh sách nhãn và xác suất
+                        for (const [label, prob] of Object.entries(topLabels)) {
+                            htmlContent += `
+                                <li style="list-style: none;"><strong>${label}:</strong> ${(prob * 100).toFixed(2)}%</li>
+                                <div style="display: flex; gap: 10px; margin-top: 10px;">`;
+        
+                            htmlContent += `</div>`;
+                        }
+                        htmlContent += `</ul>`;
+        
+                        // Hiển thị SweetAlert với kết quả
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Dự đoán thành công!',
+                            html: htmlContent,
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            text: data.message || 'Đã xảy ra lỗi không xác định',
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.close(); // Đóng SweetAlert nếu có lỗi
+        
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi kết nối',
+                        text: 'Không thể gửi yêu cầu đến server. Vui lòng kiểm tra lại kết nối hoặc thử lại sau.',
+                    });
+                });
+            });
+        </script>
+
+        <!-- JS -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="{% static 'app/vendor/bootstrap/js/bootstrap.bundle.min.js' %}" ></script>
+        <script src="{% static 'app/vendor/php-email-form/validate.js' %}" ></script>
+        <script src="{% static 'app/vendor/aos/aos.js' %}" ></script>
+        <script src="{% static 'app/vendor/swiper/swiper-bundle.min.js' %}" ></script>
+        <script src="{% static 'app/vendor/glightbox/js/glightbox.min.js' %}" ></script>
+        <script src="{% static 'app/js/main.js' %}" ></script>
+    </body>
+</html>
